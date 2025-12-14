@@ -2,23 +2,24 @@
 clear; close all; clc;
 
 %% Parameters
-L     = 260;        % ring length (m)
-ell   = 4.5;        % vehicle length (m)
-dt    = 0.05;       % time step (s)
-Tend  = 300;        % total time (s)
-Nt    = round(Tend/dt) + 1;
-t     = (0:Nt-1)*dt;
+L    = 480;        % ring length (m)
+ell = 4.5;        % vehicle length (m)
+dt = 0.05;       % time step (s)
+Tend = 300;        % total time (s)
+Nt  = round(Tend/dt) + 1;
+t = (0:Nt-1)*dt;
 
-% IDM parameters (tweakable)
-p.v0    = 30;       % desired speed (m/s)
-p.a     = 1.2;      % max acceleration (m/s^2)
-p.b     = 3.0;      % 2.0 is comfortable braking (m/s^2). Greater is strong breaking
-p.T     = 1.2;      % 1.2 approx desired time headway (s)
-p.s0    = 1.0;      % minimum spacing (m)
-p.delta = 4;        % acceleration exponent
+% IDM parameters
+p.v0 = 30;        % desired speed (m/s)
+p.a = 1.2;        % max acceleration (m/s^2)
+p.b = 3.0;        % 2.0 is comfortable braking (m/s^2). Greater is strong breaking
+p.T = 1.2;        % 1.2 approx desired time headway (s)
+p.s0 = 0.75;      % min spacing(m) (comfortable is usually 1 m)
+p.delta = 4;      % acceleration exponent
 
 % Experiments (densities): choose car counts
-N_list = [24, 28, 32, 60];
+N_list = [28, 32, 42];
+% N_list = [10];
 
 % For fundamental diagram measurement window (avoid transient)
 t_meas_start = 150;     % seconds
@@ -26,7 +27,7 @@ i_meas0 = find(t >= t_meas_start, 1, 'first');
 
 %% Storage for FD results
 rho_list = zeros(size(N_list));
-q_list   = zeros(size(N_list));
+q_list = zeros(size(N_list));
 vbar_list= zeros(size(N_list));
 
 %% Loop over densities
@@ -40,7 +41,7 @@ for run = 1:numel(N_list)
     v = p.v0 * ones(N,1) + 0.5*randn(N,1);
     v(v<0) = 0;
 
-    % Small perturbation to seed waves
+    % Small perturbation to start waves
     v(1) = 0.5*p.v0;
 
     % Logs for plots (space-time and speed heatmap)
@@ -64,7 +65,7 @@ for run = 1:numel(N_list)
         gap    = ds_mod - ell;
         gap(gap < 0.1) = 0.1;             % avoid blowups
 
-        dv     = v - v(ip1);
+        dv = v - v(ip1);
 
         % IDM desired gap
         sstar = p.s0 + v*p.T + (v.*dv)./(2*sqrt(p.a*p.b));
@@ -89,6 +90,9 @@ for run = 1:numel(N_list)
         s_log(:,k) = s;
         v_log(:,k) = v;
     end
+
+    fprintf('Laps made by the first car: %g\n', lap_count(N,1));
+    fprintf('Laps made by the last car: %g\n', lap_count(1,1));
 
     %% Fundamental diagram metrics for this run
     rho = N / L;  % veh/m
